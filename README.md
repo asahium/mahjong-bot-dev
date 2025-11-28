@@ -16,7 +16,7 @@ This project provides:
 ## Project Structure
 
 ```
-mcr-bot-dev/
+mahjong-bot-dev/
 ├── mcr_mahjong/              # MCR (Chinese Official) game engine
 │   ├── tiles.py              # Tile definitions (136 tiles)
 │   ├── player.py             # Player state and melds
@@ -41,7 +41,10 @@ mcr-bot-dev/
 │   ├── train_ppo.py          # MCR PPO training
 │   ├── train_dqn.py          # MCR DQN training
 │   ├── train_riichi_ppo.py   # Riichi PPO training
-│   └── train_riichi_dqn.py   # Riichi DQN training
+│   ├── train_riichi_dqn.py   # Riichi DQN training
+│   └── train_selfplay.py     # Self-play training for Riichi
+├── benchmark.py              # Bot evaluation on predefined hands
+├── play_against_bot.py       # Human vs Bot gameplay
 ├── tests/                    # Unit tests
 └── requirements.txt
 ```
@@ -92,8 +95,10 @@ print(f"Valid actions: {actions}")
 
 ### Training Agents
 
+#### PPO Training (Recommended)
+
 ```bash
-# Train MCR agent
+# Train MCR agent with parallel environments
 python training/train_ppo.py --timesteps 1000000 --n-envs 4
 
 # Train Riichi agent (Tenhou rules)
@@ -101,10 +106,85 @@ python training/train_riichi_ppo.py --timesteps 1000000 --rules tenhou
 
 # Train Riichi agent (EMA rules)
 python training/train_riichi_ppo.py --timesteps 1000000 --rules ema
-
-# With Apple Silicon GPU (MPS)
-python training/train_riichi_ppo.py --timesteps 1000000 --device mps
 ```
+
+#### DQN Training
+
+```bash
+# Train Riichi agent with DQN
+python training/train_riichi_dqn.py --timesteps 500000 --rules tenhou
+
+# DQN with custom exploration
+python training/train_riichi_dqn.py \
+    --timesteps 1000000 \
+    --buffer-size 100000 \
+    --exploration-fraction 0.2 \
+    --eps-start 1.0 \
+    --eps-end 0.05
+```
+
+#### Parallel Training
+
+Use multiple environments for faster PPO training:
+
+```bash
+# 8 parallel environments (recommended for PPO)
+python training/train_riichi_ppo.py --timesteps 2000000 --n-envs 8
+
+# 16 environments for faster training on multi-core systems
+python training/train_riichi_ppo.py --timesteps 5000000 --n-envs 16
+```
+
+**Note:** Parallel environments use `SubprocVecEnv` for true multiprocessing. Each environment runs in a separate process, providing linear speedup with CPU cores.
+
+#### GPU Acceleration
+
+```bash
+# Apple Silicon GPU (MPS)
+python training/train_riichi_ppo.py --timesteps 1000000 --device mps
+
+# NVIDIA GPU (CUDA)
+python training/train_riichi_ppo.py --timesteps 1000000 --device cuda
+
+# Automatic device selection
+python training/train_riichi_ppo.py --timesteps 1000000 --device auto
+```
+
+#### Hyperparameter Tuning
+
+```bash
+# Full hyperparameter control for PPO
+python training/train_riichi_ppo.py \
+    --timesteps 2000000 \
+    --n-envs 8 \
+    --lr 3e-4 \
+    --n-steps 2048 \
+    --batch-size 64 \
+    --n-epochs 10 \
+    --gamma 0.99 \
+    --ent-coef 0.01 \
+    --opponent random \
+    --rules tenhou
+
+# With reward shaping disabled
+python training/train_riichi_ppo.py --timesteps 1000000 --no-reward-shaping
+```
+
+**PPO Parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--timesteps` | 1,000,000 | Total training steps |
+| `--n-envs` | 4 | Parallel environments |
+| `--lr` | 3e-4 | Learning rate |
+| `--n-steps` | 2048 | Steps per update per env |
+| `--batch-size` | 64 | Minibatch size |
+| `--n-epochs` | 10 | Epochs per update |
+| `--gamma` | 0.99 | Discount factor |
+| `--ent-coef` | 0.01 | Entropy coefficient |
+| `--opponent` | random | Opponent (random/greedy) |
+| `--rules` | tenhou | Rule set (tenhou/ema) |
+| `--device` | auto | Device (auto/cpu/cuda/mps) |
 
 ### Logging with Weights & Biases
 
@@ -131,6 +211,43 @@ python training/train_riichi_ppo.py \
 - `game/win_rate` - Percentage of games won
 - `game/win_count` / `game/loss_count` - Win/loss statistics
 - `train/*` - PPO/DQN training metrics
+
+### Self-Play Training
+
+Train agents by playing against themselves for stronger opponents:
+
+```bash
+# Basic self-play training
+python training/train_selfplay.py --timesteps 2000000 --n-envs 8
+
+# With custom parameters
+python training/train_selfplay.py \
+    --timesteps 5000000 \
+    --n-envs 16 \
+    --lr 3e-4 \
+    --batch-size 256 \
+    --rules tenhou \
+    --device auto
+```
+
+**Self-Play Features:**
+- **SelfPlayEnv**: Agent plays all 4 seats in the game
+- **Past-Self Play**: Opponent models updated periodically (every 50k steps)
+- **Enhanced Reward Shaping**: Shanten-based rewards, riichi bonuses, survival rewards
+- **Parallel Environments**: SubprocVecEnv for faster training
+
+**Self-Play Parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `--timesteps` | 2,000,000 | Total training steps |
+| `--n-envs` | 8 | Parallel environments |
+| `--lr` | 3e-4 | Learning rate |
+| `--batch-size` | 256 | Minibatch size |
+| `--rules` | tenhou | Rule set (tenhou/ema) |
+| `--save-dir` | models/selfplay | Model save directory |
+| `--seed` | 42 | Random seed |
+| `--device` | auto | Device (auto/cpu/cuda/mps) |
 
 ### Using the Gymnasium Environments
 
@@ -270,13 +387,156 @@ pytest tests/ -v
 pytest tests/ -v --cov=mcr_mahjong --cov=riichi_mahjong --cov=envs
 ```
 
+## Benchmarking
+
+Evaluate your trained model on predefined hands to assess decision quality:
+
+```bash
+# Run benchmark on a trained model
+python benchmark.py --model models/riichi_ppo/ppo_tenhou_*/best/best_model.zip
+
+# With verbose output
+python benchmark.py --model models/riichi_ppo/ppo_tenhou_*/final_model.zip --verbose
+```
+
+**Benchmark Test Categories:**
+
+| Category | Tests | Description |
+|----------|-------|-------------|
+| Discard | 4 | Tile efficiency, tenpai preservation |
+| Riichi | 2 | When to declare riichi |
+| Defense | 2 | Safe tile selection against riichi |
+
+**Scoring:**
+- **PASS (100%)**: Model chose an expected optimal action
+- **OKAY (50%)**: Model chose acceptable but not optimal action
+- **FAIL (0%)**: Model made a clear mistake
+
+**Example Output:**
+
+```
+RIICHI MAHJONG BOT BENCHMARK
+============================================================
+PASS Tenpai - Keep wait tiles
+   Situation: discard
+   Bot chose: Discard 1p
+   Expected:  Discard 1p
+...
+============================================================
+SUMMARY
+Total tests: 8
+Passed: 5
+Failed: 1
+Okay: 2
+
+Overall Score: 75.0%
+```
+
+A score of 70%+ indicates the bot has learned basic mahjong strategy.
+
+## Play Against Bot
+
+Test your trained model by playing against it or watching it play:
+
+### Interactive Play
+
+```bash
+# Play against your trained bot
+python play_against_bot.py --model models/riichi_ppo/ppo_tenhou_*/best/best_model.zip
+
+# Use EMA rules
+python play_against_bot.py --model path/to/model.zip --rules ema
+```
+
+### Watch Mode
+
+```bash
+# Watch the bot play 5 games against random opponents
+python play_against_bot.py --model path/to/model.zip --watch --games 5
+
+# Watch 10 games
+python play_against_bot.py --model path/to/model.zip --watch --games 10
+```
+
+**Controls:**
+- Enter action number to play
+- Type `q` to quit
+- Type `y` to play again after game ends
+
 ## Training Tips
 
-1. **Start Simple**: Train against random opponents first
-2. **Reward Shaping**: Enable for faster initial learning
-3. **Parallel Environments**: Use `n_envs=4+` for PPO
-4. **Monitor Progress**: `tensorboard --logdir models/riichi_ppo/logs`
-5. **Curriculum Learning**: Progress from random → greedy → self-play
+### Getting Started
+
+1. **Start Simple**: Train against random opponents first to learn basic tile efficiency
+2. **Reward Shaping**: Keep enabled (`--reward-shaping`) for faster initial learning
+3. **Use PPO**: Generally more stable than DQN for this environment
+
+### Parallel Training Recommendations
+
+| CPU Cores | Recommended `--n-envs` | Notes |
+|-----------|------------------------|-------|
+| 4 | 4 | Good for laptops |
+| 8 | 8 | Standard workstation |
+| 16+ | 16 | Server/high-end desktop |
+
+**Note:** PPO benefits significantly from parallel environments. More environments = faster wall-clock training time.
+
+### Curriculum Learning
+
+Progress through increasingly difficult opponents:
+
+```bash
+# Stage 1: Random opponents (500k-1M steps)
+python training/train_riichi_ppo.py --timesteps 1000000 --opponent random
+
+# Stage 2: Greedy opponents (500k-1M steps)
+python training/train_riichi_ppo.py --timesteps 1000000 --opponent greedy
+
+# Stage 3: Self-play (2M+ steps)
+python training/train_selfplay.py --timesteps 2000000 --n-envs 8
+```
+
+### Monitoring Training
+
+```bash
+# TensorBoard (if using wandb)
+tensorboard --logdir models/riichi_ppo/*/tensorboard
+
+# Check model checkpoints
+ls models/riichi_ppo/*/checkpoints/
+
+# Evaluate with benchmark
+python benchmark.py --model models/riichi_ppo/*/best/best_model.zip
+```
+
+### GPU vs CPU
+
+- **CPU**: Sufficient for most training, especially with parallel envs
+- **MPS (Apple Silicon)**: Good speedup on M1/M2/M3 Macs
+- **CUDA**: Best for large batch sizes and long training runs
+
+### Recommended Training Pipeline
+
+```bash
+# 1. Initial training against random (1M steps)
+python training/train_riichi_ppo.py \
+    --timesteps 1000000 \
+    --n-envs 8 \
+    --rules tenhou \
+    --wandb
+
+# 2. Benchmark the model
+python benchmark.py --model models/riichi_ppo/*/best/best_model.zip
+
+# 3. Self-play refinement (2M steps)
+python training/train_selfplay.py \
+    --timesteps 2000000 \
+    --n-envs 16 \
+    --rules tenhou
+
+# 4. Final evaluation
+python play_against_bot.py --model models/selfplay/*/final_model.zip --watch --games 10
+```
 
 ## References
 
