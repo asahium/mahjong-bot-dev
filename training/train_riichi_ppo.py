@@ -341,7 +341,7 @@ def main():
     
     # Environment parameters
     parser.add_argument("--rules", type=str, default="tenhou", choices=["tenhou", "ema"])
-    parser.add_argument("--opponent", type=str, default="random", choices=["random", "greedy"])
+    parser.add_argument("--opponent", type=str, default="random", choices=["random", "greedy", "heuristic", "mortal"])
     parser.add_argument("--no-reward-shaping", action="store_true")
     
     # Saving parameters

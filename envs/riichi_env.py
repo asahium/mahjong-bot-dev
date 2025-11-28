@@ -22,6 +22,28 @@ from riichi_mahjong.player import RiichiPlayer, PlayerState
 from riichi_mahjong.scoring import RiichiScorer
 from riichi_mahjong.rules import RuleSet, TENHOU_RULES, EMA_RULES
 
+# Lazy imports for optional agents
+_heuristic_agent = None
+_mortal_agent = None
+
+
+def _get_heuristic_agent():
+    """Lazy load heuristic agent."""
+    global _heuristic_agent
+    if _heuristic_agent is None:
+        from agents.heuristic_agent import HeuristicAgent
+        _heuristic_agent = HeuristicAgent()
+    return _heuristic_agent
+
+
+def _get_mortal_agent():
+    """Lazy load Mortal agent."""
+    global _mortal_agent
+    if _mortal_agent is None:
+        from agents.mortal_agent import MortalAgent
+        _mortal_agent = MortalAgent()
+    return _mortal_agent
+
 
 class RiichiMahjongEnv(gym.Env):
     """
@@ -490,6 +512,10 @@ class RiichiMahjongEnv(gym.Env):
             return self._random_policy(valid_actions)
         elif self.opponent_policy == "greedy":
             return self._greedy_policy(player_idx, valid_actions)
+        elif self.opponent_policy == "heuristic":
+            return self._heuristic_policy(player_idx, valid_actions)
+        elif self.opponent_policy == "mortal":
+            return self._mortal_policy(player_idx, valid_actions)
         return self._random_policy(valid_actions)
     
     def _random_policy(self, valid_actions: List[RiichiAction]) -> RiichiAction:
@@ -525,6 +551,16 @@ class RiichiMahjongEnv(gym.Env):
             return random.choice(discards)
         
         return sorted_actions[0]
+    
+    def _heuristic_policy(self, player_idx: int, valid_actions: List[RiichiAction]) -> RiichiAction:
+        """Heuristic-based action selection using shanten and tile efficiency."""
+        agent = _get_heuristic_agent()
+        return agent.get_action(self.game, player_idx, valid_actions)
+    
+    def _mortal_policy(self, player_idx: int, valid_actions: List[RiichiAction]) -> RiichiAction:
+        """Mortal AI action selection (strong Tenhou-level opponent)."""
+        agent = _get_mortal_agent()
+        return agent.get_action(self.game, player_idx, valid_actions)
     
     def _calculate_shaping_reward(self, action: RiichiAction) -> float:
         """Calculate reward shaping."""

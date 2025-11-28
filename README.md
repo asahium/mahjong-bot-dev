@@ -9,9 +9,11 @@ This project provides:
 - **Complete MCR Game Engine**: Full implementation of MCR rules with all 81 scoring patterns
 - **Complete Riichi Game Engine**: Full implementation of Japanese Mahjong with 40+ Yaku
 - **Gymnasium Environments**: Compatible with Stable Baselines3 and other RL frameworks
-- **Training Scripts**: Ready-to-use PPO and DQN training configurations
+- **Training Scripts**: Ready-to-use PPO, DQN, and self-play training configurations
+- **Multiple Opponent Types**: Random, greedy, heuristic (shanten-based), and Mortal AI
+- **Shanten Calculator**: Fast calculation of distance to tenpai with ukeire
 - **Tenhou Client Interface**: Abstraction for connecting trained agents to Tenhou (for future use)
-- **Baseline Agents**: Random and greedy agents for benchmarking
+- **Benchmarking Tools**: Evaluate bot decision quality on predefined hands
 
 ## Project Structure
 
@@ -28,12 +30,15 @@ mahjong-bot-dev/
 │   ├── player.py             # Player with Riichi/Furiten
 │   ├── scoring.py            # 40+ Yaku, Han/Fu system
 │   ├── dora.py               # Dora system
+│   ├── shanten.py            # Shanten calculator
 │   └── rules.py              # EMA/Tenhou rule configs
 ├── envs/                     # Gymnasium environments
 │   ├── mcr_env.py            # MCRMahjongEnv
 │   └── riichi_env.py         # RiichiMahjongEnv
 ├── agents/                   # Agent implementations
 │   ├── random_agent.py       # Random/Greedy baselines
+│   ├── heuristic_agent.py    # Shanten-based heuristic agent
+│   ├── mortal_agent.py       # Mortal AI interface (Tenhou-level)
 │   └── sb3_agent.py          # Stable Baselines3 wrapper
 ├── clients/                  # Online platform interfaces
 │   └── tenhou_client.py      # Tenhou client interface
@@ -248,6 +253,40 @@ python training/train_selfplay.py \
 | `--save-dir` | models/selfplay | Model save directory |
 | `--seed` | 42 | Random seed |
 | `--device` | auto | Device (auto/cpu/cuda/mps) |
+
+### Opponent Types
+
+Train against different opponent strengths for curriculum learning:
+
+| Opponent | Strength | Description |
+|----------|----------|-------------|
+| `random` | Weak | Random valid action selection |
+| `greedy` | Basic | Priority-based (win > riichi > calls > discard) |
+| `heuristic` | Medium | Shanten + tile efficiency + defense |
+| `mortal` | Strong | Mortal AI (Tenhou 8-dan level) |
+
+```bash
+# Train against random (beginner)
+python training/train_riichi_ppo.py --opponent random --timesteps 1000000
+
+# Train against heuristic (intermediate)
+python training/train_riichi_ppo.py --opponent heuristic --timesteps 2000000
+
+# Train against Mortal AI (advanced) - requires Mortal model
+python training/train_riichi_ppo.py --opponent mortal --timesteps 5000000
+```
+
+**Heuristic Agent Features:**
+- Shanten calculation (distance to tenpai)
+- Ukeire maximization (tile efficiency)
+- Defense mode against riichi (genbutsu, suji)
+- Yakuhai awareness for calls
+
+**Mortal AI:**
+- Download model from [Mortal GitHub](https://github.com/Equim-chan/Mortal)
+- Place at `models/mortal/mortal.onnx`
+- Requires `onnxruntime` (`pip install onnxruntime`)
+- Falls back to heuristic if model not available
 
 ### Using the Gymnasium Environments
 

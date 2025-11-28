@@ -302,7 +302,7 @@ def main():
     
     # Environment parameters
     parser.add_argument("--opponent", type=str, default="random",
-                       choices=["random", "greedy"],
+                       choices=["random", "greedy", "heuristic", "mortal"],
                        help="Opponent policy")
     parser.add_argument("--no-reward-shaping", action="store_true",
                        help="Disable reward shaping")
