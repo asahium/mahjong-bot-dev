@@ -1,0 +1,4 @@
+"""
+MCR Mahjong Training Scripts
+"""
+

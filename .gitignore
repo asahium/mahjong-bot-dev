@@ -1,0 +1,142 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ========================
+# ML / RL Training Files
+# ========================
+
+# Model weights and checkpoints
+models/
+checkpoints/
+*.zip
+*.pkl
+*.pt
+*.pth
+*.h5
+*.onnx
+*.safetensors
+
+# TensorBoard logs
+tensorboard/
+runs/
+logs/
+*.tfevents.*
+
+# WandB
+wandb/
+*.wandb
+
+# Training outputs
+outputs/
+results/
+experiments/
+
+# Large data files
+data/
+*.csv
+*.json.gz
+*.parquet
+
+# Replay buffers (can be huge)
+replay_buffer/
+*.buffer
+
+# ========================
+# System / Misc
+# ========================
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.log
+
+# Secrets
+.env
+.env.local
+*.key
+secrets.yaml
+

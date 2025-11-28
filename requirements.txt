@@ -1,0 +1,63 @@
+# Mahjong RL Environment (MCR + Riichi)
+# Python 3.9+ required
+
+# ===================
+# Core dependencies
+# ===================
+numpy>=1.21.0,<2.0.0
+gymnasium>=0.29.0,<1.0.0
+
+# ===================
+# Deep Learning
+# ===================
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ===================
+# Reinforcement Learning
+# ===================
+stable-baselines3>=2.0.0,<3.0.0
+# stable-baselines3[extra]  # Optional: includes tensorboard, tqdm, rich
+
+# ===================
+# Training utilities
+# ===================
+tqdm>=4.64.0
+rich>=13.0.0
+tensorboard>=2.12.0
+
+# ===================
+# Experiment tracking
+# ===================
+wandb>=0.15.0
+
+# ===================
+# Tenhou client
+# ===================
+websockets>=11.0
+
+# ===================
+# Testing
+# ===================
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# ===================
+# Development (optional)
+# ===================
+# Uncomment if needed:
+# black>=23.0.0       # Code formatting
+# flake8>=6.0.0       # Linting
+# mypy>=1.0.0         # Type checking
+# isort>=5.12.0       # Import sorting
+
+# ===================
+# Installation
+# ===================
+# pip install -r requirements.txt
+#
+# For Apple Silicon (M1/M2/M3) with MPS support:
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+#
+# Quick install all:
+# pip install numpy gymnasium torch torchvision stable-baselines3 tqdm rich tensorboard wandb websockets pytest
