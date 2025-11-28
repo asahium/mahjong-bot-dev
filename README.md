@@ -50,8 +50,8 @@ mcr-bot-dev/
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/mcr-bot-dev.git
-cd mcr-bot-dev
+git clone https://github.com/your-repo/mahjong-bot-dev.git
+cd mahjong-bot-dev
 
 # Create virtual environment
 python -m venv venv
